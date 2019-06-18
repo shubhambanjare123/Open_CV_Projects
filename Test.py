@@ -2,30 +2,29 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-img1 = cv2.imread('5.jpg')
-img2 = cv2.imread('1.jpg')
+cap = cv2.VideoCapture(0)
 
-##add = img1 + img2
-##add = cv2.add(img1,img2)
-##weighted = cv2.addWeighted(img1,0.6,img2,0.4,0)
+while True:
+    ret,frame = cap.read()
 
-rows,cols,channel = img2.shape
-roi = img1[0:rows,0:cols]
+    laplacian = cv2.Laplacian(frame,cv2.CV_64F)
+    sobelx = cv2.Sobel(frame,cv2.CV_64F, 1, 0, ksize=5)
+    sobely = cv2.Sobel(frame,cv2.CV_64F, 0, 1, ksize=5)
 
-img2gray = cv2.cvtColor(img2,cv2.COLOR_BGR2GRAY)
-ret,mask = cv2.threshold(img2gray,220,255,cv2.THRESH_BINARY_INV)
+    edges = cv2.Canny(frame,100,200)
 
-mask_inv = cv2.bitwise_not(mask)
+    
+    cv2.imshow('frame',frame)
+    cv2.imshow('laplacian',laplacian)
+    cv2.imshow('sobelx',sobelx)
+    cv2.imshow('sobely',sobely)
+    cv2.imshow('edges',edges)
 
-img1_bg = cv2.bitwise_and(roi,roi,mask= mask_inv)
-img2_fg = cv2.bitwise_and(img2,img2,mask=mask)
-
-dst = cv2.add(img1_bg,img2_fg)
-img1[0:rows,0:cols] = dst
-
-cv2.imshow('res',img1)
-cv2.imshow('dst',dst)
-
-##cv2.imshow('mask', mask)
-cv2.waitKey(0)
+    k = cv2.waitKey(5) & 0xFF
+    if k == 27:
+        break
+                                            
 cv2.destroyAllWindows()
+cap.release()
+
+
