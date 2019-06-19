@@ -2,29 +2,20 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-cap = cv2.VideoCapture(0)
+img1 = cv2.imread('template2.jpg',1)
+img2 = cv2.imread('pic2.jpg',1)
 
-while True:
-    ret,frame = cap.read()
+orb= cv2.ORB_create()
 
-    laplacian = cv2.Laplacian(frame,cv2.CV_64F)
-    sobelx = cv2.Sobel(frame,cv2.CV_64F, 1, 0, ksize=5)
-    sobely = cv2.Sobel(frame,cv2.CV_64F, 0, 1, ksize=5)
+kp1, des1 = orb.detectAndCompute(img1,None)
+kp2, des2 = orb.detectAndCompute(img2,None)
 
-    edges = cv2.Canny(frame,100,200)
+bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck = True)
 
-    
-    cv2.imshow('frame',frame)
-    cv2.imshow('laplacian',laplacian)
-    cv2.imshow('sobelx',sobelx)
-    cv2.imshow('sobely',sobely)
-    cv2.imshow('edges',edges)
+matches = bf.match(des1,des2)
+matches = sorted(matches , key = lambda x:x.distance)
 
-    k = cv2.waitKey(5) & 0xFF
-    if k == 27:
-        break
-                                            
-cv2.destroyAllWindows()
-cap.release()
+img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:10], None, flags=2)
 
-
+plt.imshow(img3)
+plt.show()
