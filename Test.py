@@ -1,21 +1,52 @@
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
+from pygame import mixer
 
-img1 = cv2.imread('template2.jpg',1)
-img2 = cv2.imread('pic2.jpg',1)
+static_back = None
+cap = cv2.VideoCapture(0)
+fgbg = cv2.createBackgroundSubtractorMOG2()
 
-orb= cv2.ORB_create()
+while True:
+    ret, frame = cap.read()
+    motion = 0
+##  frame = cv2.GaussianBlur(frame, (21,21), 0)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    if static_back is None: 
+        static_back = gray 
+        continue
+    diff_frame = cv2.absdiff(static_back, frame)
 
-kp1, des1 = orb.detectAndCompute(img1,None)
-kp2, des2 = orb.detectAndCompute(img2,None)
+    thresh_frame = cv2.threshold(diff_frame, 30, 255, cv2.THRESH_BINARY)[1] 
+    thresh_frame = cv2.dilate(thresh_frame, None, iterations = 2)
 
-bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck = True)
+    (_, cnts, _) = cv2.findContours(thresh_frame.copy(),  
+                       cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-matches = bf.match(des1,des2)
-matches = sorted(matches , key = lambda x:x.distance)
+    for contour in cnts: 
+        if cv2.contourArea(contour) < 10000: 
+            continue
+        motion = 1
+  
+        (x, y, w, h) = cv2.boundingRect(contour) 
+        # making green rectangle arround the moving object 
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3)
+        
 
-img3 = cv2.drawMatches(img1,kp1,img2,kp2,matches[:10], None, flags=2)
+    
+    
+    
+    fgmask = fgbg.apply(frame)
 
-plt.imshow(img3)
-plt.show()
+    cv2.imshow('original',frame)
+    cv2.imshow('fg',fgmask)
+
+    if  motion == 1:
+        mixer.init()
+        mixer.music.load("D:\Shubham\Python Program\Open CV Projects\Open_CV_Projects\Media\Biba.mp3")
+
+    k = cv2.waitKey(30) & 0xff
+    if k == 27:
+        break
+
+cap.release()
+cv2.destroyAllWindows()
